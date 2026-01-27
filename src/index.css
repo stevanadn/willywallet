@@ -80,11 +80,13 @@ html {
 
 ::-webkit-scrollbar-track {
   background: #1a1625;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(135deg, #1e3a5f, #2d4a6f);
   border-radius: 4px;
+  transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -106,6 +108,60 @@ textarea::placeholder {
   color: #6b7280 !important;
 }
 
+/* Ripple effect for buttons */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  margin-left: -10px;
+  left: 50%;
+  top: 50%;
+  transform: scale(0);
+  animation: ripple 0.6s ease-out;
+  pointer-events: none;
+}
+
+/* Enhanced animations */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+}
+
 /* Glowing effects */
 @layer utilities {
   .glow-purple {
@@ -115,5 +171,33 @@ textarea::placeholder {
   .glow-text {
     text-shadow: 0 0 10px rgba(30, 58, 95, 0.6), 0 0 20px rgba(30, 58, 95, 0.4);
   }
+  
+  .glow-primary {
+    box-shadow: 0 0 15px rgba(30, 58, 95, 0.5), 0 0 30px rgba(30, 58, 95, 0.3);
+  }
+  
+  .glow-lg {
+    box-shadow: 0 0 30px rgba(30, 58, 95, 0.5), 0 0 60px rgba(30, 58, 95, 0.3);
+  }
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(26, 22, 37, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Smooth transitions for all interactive elements */
+button, a, input, select, textarea {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus visible styles */
+*:focus-visible {
+  outline: 2px solid rgba(30, 58, 95, 0.8);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 

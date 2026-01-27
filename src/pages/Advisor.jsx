@@ -61,7 +61,7 @@ export default function Advisor() {
       // No chat history, show welcome message
       const welcomeMessage = {
         role: 'assistant',
-        content: "Hi! I'm Willy, your financial mentor. I'm here to help you manage your money better. Ask me anything about your finances! 💰",
+        content: "Hi! I'm Vault, your financial mentor. I'm here to help you manage your money better. Ask me anything about your finances! 💰",
       }
       setMessages([welcomeMessage])
       setIsInitialized(true)
@@ -204,7 +204,7 @@ export default function Advisor() {
 
     try {
       const context = getFinancialContext()
-      const systemPrompt = `You are Willy, a friendly financial mentor for high school students.
+      const systemPrompt = `You are Vault, a friendly financial mentor for high school students.
 
 User: ${context.userName}
 Balance: ${context.currentBalance} | Income: ${context.monthlyIncome} | Expense: ${context.monthlyExpense} | Net: ${context.netFlow}
@@ -322,7 +322,7 @@ Question: ${userMessage}`
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <div className="animate-fade-in-down">
         <h1 className="text-2xl sm:text-3xl font-bold text-white glow-text">AI Financial Advisor</h1>
-        <p className="text-white/70 mt-1 text-sm sm:text-base">Get personalized financial advice from Willy</p>
+        <p className="text-white/70 mt-1 text-sm sm:text-base">Get personalized financial advice from Vault</p>
       </div>
 
       {!GEMINI_API_KEY && (
@@ -366,7 +366,7 @@ Question: ${userMessage}`
                   setMessages([
                     {
                       role: 'assistant',
-                      content: "Hi! I'm Willy, your financial mentor. I'm here to help you manage your money better. Ask me anything about your finances! 💰",
+                      content: "Hi! I'm Vault, your financial mentor. I'm here to help you manage your money better. Ask me anything about your finances! 💰",
                     },
                   ])
                   setIsInitialized(false)
@@ -461,7 +461,7 @@ Question: ${userMessage}`
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask Willy anything..."
+                placeholder="Ask Vault anything..."
                 className="flex-1 text-sm sm:text-base"
                 disabled={loading || !GEMINI_API_KEY}
               />

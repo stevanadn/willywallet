@@ -62,12 +62,15 @@ export default function Login() {
       </div>
       
       <Card glow className="w-full max-w-md relative z-10 animate-scale-in">
-        <div className="text-center mb-5 sm:mb-6 animate-fade-in-down">
-          <div className="inline-block mb-3 sm:mb-4 text-4xl sm:text-5xl animate-bounce-subtle">💰</div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2 glow-text">
-            Willy Wallet
+        <div className="text-center mb-6 sm:mb-8 animate-fade-in-down">
+          <div className="relative inline-block mb-4 sm:mb-5">
+            <div className="absolute inset-0 bg-primary/30 rounded-full blur-2xl animate-pulse-slow" />
+            <div className="relative text-5xl sm:text-6xl animate-bounce-subtle">💰</div>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 glow-text">
+            Student Vault
           </h1>
-          <p className="text-white/70 text-sm sm:text-base">
+          <p className="text-white/70 text-base sm:text-lg font-medium">
             {isSignUp ? 'Create your account' : 'Welcome back!'}
           </p>
         </div>

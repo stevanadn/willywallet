@@ -1,4 +1,4 @@
--- Willy Wallet Database Schema Migration
+-- Student Vault Database Schema Migration
 -- This migration creates all tables, triggers, and RLS policies
 
 -- Enable UUID extension if not already enabled

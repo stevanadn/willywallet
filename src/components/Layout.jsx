@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -16,8 +16,18 @@ import { useNavigate } from 'react-router-dom'
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -30,145 +40,242 @@ export default function Layout({ children }) {
     { path: '/budgets', icon: Target, label: 'Budgets' },
     { path: '/goals', icon: PiggyBank, label: 'Goals' },
     { path: '/advisor', icon: MessageSquare, label: 'Advisor' },
-    { path: '/profile', icon: User, label: 'Profile' },
   ]
 
   const isActive = (path) => location.pathname === path
 
   return (
     <div className="min-h-screen bg-gradient-dark relative">
-      {/* Desktop Sidebar */}
-      <aside className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col z-20">
-        <div className="flex flex-col flex-grow bg-dark-card/80 backdrop-blur-sm border-r border-dark-border pt-5 pb-4 overflow-y-auto shadow-glow-purple">
-          <div className="flex items-center flex-shrink-0 px-4 mb-8 animate-fade-in-down">
-            <h1 className="text-2xl font-bold text-white glow-text">
-              💰 Willy Wallet
-            </h1>
-          </div>
-          <nav className="mt-5 flex-1 px-2 space-y-1">
-            {navItems.map((item, index) => {
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-300 animate-fade-in-up ${
-                    isActive(item.path)
-                      ? 'bg-gradient-to-r from-primary to-primary-light text-white shadow-glow-purple transform scale-105'
-                      : 'text-white hover:bg-primary/20 hover:text-white hover:translate-x-1 border border-transparent hover:border-primary/30'
-                  }`}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {item.label}
-                </Link>
-              )
-            })}
-          </nav>
-          <div className="flex-shrink-0 px-4">
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-4 py-3 text-sm font-medium text-white rounded-lg hover:bg-primary/20 hover:text-white transition-all duration-300 hover:translate-x-1 border border-transparent hover:border-primary/30"
+      {/* Top Navigation Bar */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          scrolled
+            ? 'bg-dark-card/95 backdrop-blur-xl border-b border-dark-border/50 shadow-elevation-3'
+            : 'bg-dark-card/80 backdrop-blur-sm border-b border-dark-border/30'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-20">
+            {/* Logo */}
+            <Link
+              to="/"
+              className="flex items-center space-x-3 group animate-fade-in-down"
             >
-              <LogOut className="mr-3 h-5 w-5" />
-              Logout
-            </button>
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/30 rounded-xl blur-md group-hover:blur-lg transition-all duration-300" />
+                <div className="relative bg-gradient-to-br from-primary to-primary-light p-2.5 rounded-xl shadow-glow-primary group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-xl sm:text-2xl"></span>
+                </div>
+              </div>
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-white glow-text group-hover:scale-105 transition-transform duration-300">
+                  Student Vault
+                </h1>
+                <p className="hidden sm:block text-xs text-white/60 -mt-0.5">
+                  Financial Management App for Students
+                </p>
+              </div>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+              {navItems.map((item, index) => {
+                const Icon = item.icon
+                const active = isActive(item.path)
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`relative flex items-center space-x-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group ${
+                      active
+                        ? 'text-white bg-gradient-to-r from-primary/20 to-primary-light/20'
+                        : 'text-white/70 hover:text-white hover:bg-primary/10'
+                    }`}
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    {active && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-primary-light/30 rounded-xl blur-sm" />
+                    )}
+                    <Icon
+                      className={`relative z-10 h-4 w-4 transition-transform duration-200 ${
+                        active ? 'scale-110' : 'group-hover:scale-110'
+                      }`}
+                    />
+                    <span className="relative z-10">{item.label}</span>
+                    {active && (
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-0.5 bg-gradient-to-r from-primary to-primary-light rounded-full" />
+                    )}
+                  </Link>
+                )
+              })}
+            </nav>
+
+            {/* Profile Menu & Mobile Menu Button */}
+            <div className="flex items-center space-x-2">
+              {/* Desktop Profile Link */}
+              <Link
+                to="/profile"
+                className={`hidden md:flex items-center space-x-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                  isActive('/profile')
+                    ? 'text-white bg-gradient-to-r from-primary/20 to-primary-light/20'
+                    : 'text-white/70 hover:text-white hover:bg-primary/10'
+                }`}
+              >
+                <User className="h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+
+              {/* Logout Button Desktop */}
+              <button
+                onClick={handleLogout}
+                className="hidden md:flex items-center space-x-2 px-4 py-2.5 rounded-xl font-medium text-sm text-white/70 hover:text-white hover:bg-red-500/20 transition-all duration-200 active:scale-95"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </button>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="md:hidden text-white/70 hover:text-white hover:bg-primary/20 rounded-xl p-2 transition-all duration-200 active:scale-95"
+                aria-label="Toggle menu"
+              >
+                {sidebarOpen ? (
+                  <X size={24} className="animate-scale-in" />
+                ) : (
+                  <Menu size={24} className="animate-scale-in" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
-      </aside>
-
-      {/* Mobile Header */}
-      <header className="md:hidden bg-dark-card/95 backdrop-blur-sm border-b border-dark-border px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-glow-purple z-20 sticky top-0 safe-area-inset-top">
-        <h1 className="text-lg sm:text-xl font-bold text-white glow-text truncate">
-          💰 Willy Wallet
-        </h1>
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="text-gray-300 hover:bg-primary/20 rounded-lg p-1.5 sm:p-2 transition-all duration-200 flex-shrink-0"
-          aria-label="Toggle menu"
-        >
-          {sidebarOpen ? <X size={20} className="sm:w-6 sm:h-6" /> : <Menu size={20} className="sm:w-6 sm:h-6" />}
-        </button>
       </header>
 
       {/* Mobile Sidebar */}
       {sidebarOpen && (
-        <div className="md:hidden fixed inset-0 z-50">
+        <>
           <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm animate-fade-in"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 animate-fade-in md:hidden"
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 w-64 sm:w-72 bg-dark-card/98 backdrop-blur-sm shadow-glow-lg animate-slide-in-left border-r border-dark-border">
-            <div className="flex flex-col h-full pt-4 sm:pt-5 pb-4 overflow-y-auto">
-              <div className="flex items-center justify-between px-3 sm:px-4 mb-6 sm:mb-8 flex-shrink-0">
-                <h1 className="text-lg sm:text-xl font-bold text-white glow-text">
-                  💰 Willy Wallet
-                </h1>
-                <button 
+          <aside className="fixed inset-y-0 right-0 w-72 bg-dark-card/98 backdrop-blur-xl border-l border-dark-border/50 shadow-elevation-4 z-50 animate-slide-in-left md:hidden overflow-y-auto">
+            <div className="flex flex-col h-full">
+              {/* Mobile Header */}
+              <div className="flex items-center justify-between p-5 border-b border-dark-border/50">
+                <h2 className="text-xl font-bold text-white glow-text">Menu</h2>
+                <button
                   onClick={() => setSidebarOpen(false)}
-                  className="text-gray-400 hover:text-gray-200 transition-all duration-200 hover:bg-primary/20 rounded-lg p-1.5 flex-shrink-0"
+                  className="text-gray-400 hover:text-white transition-all duration-200 hover:bg-primary/20 rounded-xl p-2 active:scale-95"
                   aria-label="Close menu"
                 >
-                  <X size={20} className="sm:w-6 sm:h-6" />
+                  <X size={24} />
                 </button>
               </div>
-              <nav className="flex-1 px-2 space-y-1 overflow-y-auto">
+
+              {/* Mobile Navigation */}
+              <nav className="flex-1 px-4 py-6 space-y-2">
                 {navItems.map((item, index) => {
                   const Icon = item.icon
+                  const active = isActive(item.path)
                   return (
                     <Link
                       key={item.path}
                       to={item.path}
                       onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium rounded-lg transition-all duration-300 ${
-                        isActive(item.path)
-                          ? 'bg-gradient-to-r from-primary to-primary-light text-white shadow-glow-purple'
-                          : 'text-white hover:bg-primary/20 hover:text-white'
+                      className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-200 group ${
+                        active
+                          ? 'text-white bg-gradient-to-r from-primary/30 to-primary-light/30 shadow-glow-primary'
+                          : 'text-white/70 hover:text-white hover:bg-primary/10'
                       }`}
                       style={{ animationDelay: `${index * 0.05}s` }}
                     >
-                      <Icon className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                      <span className="truncate">{item.label}</span>
+                      <Icon
+                        className={`h-5 w-5 transition-transform duration-200 ${
+                          active ? 'scale-110' : 'group-hover:scale-110'
+                        }`}
+                      />
+                      <span>{item.label}</span>
+                      {active && (
+                        <div className="ml-auto w-2 h-2 bg-primary rounded-full animate-pulse" />
+                      )}
                     </Link>
                   )
                 })}
               </nav>
-              <div className="px-3 sm:px-4 flex-shrink-0 pt-2">
+
+              {/* Mobile Footer Actions */}
+              <div className="p-4 space-y-2 border-t border-dark-border/50">
+                <Link
+                  to="/profile"
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl font-medium transition-all duration-200 ${
+                    isActive('/profile')
+                      ? 'text-white bg-gradient-to-r from-primary/30 to-primary-light/30'
+                      : 'text-white/70 hover:text-white hover:bg-primary/10'
+                  }`}
+                >
+                  <User className="h-5 w-5" />
+                  <span>Profile</span>
+                </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium text-white rounded-lg hover:bg-primary/20 hover:text-white transition-all duration-300"
+                  className="flex items-center space-x-3 w-full px-4 py-3.5 rounded-xl font-medium text-white/70 hover:text-white hover:bg-red-500/20 transition-all duration-200 active:scale-95"
                 >
-                  <LogOut className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-                  <span className="truncate">Logout</span>
+                  <LogOut className="h-5 w-5" />
+                  <span>Logout</span>
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+          </aside>
+        </>
       )}
 
       {/* Main Content */}
-      <main className="md:ml-64 pb-20 md:pb-0 relative z-10">
-        <div className="py-4 md:py-6 px-3 sm:px-4 md:px-8 animate-fade-in">{children}</div>
+      <main className="pt-16 sm:pt-20 pb-6 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div className="animate-fade-in">{children}</div>
+        </div>
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-card/95 backdrop-blur-sm border-t border-dark-border px-1 py-1.5 shadow-glow-purple z-20 safe-area-inset-bottom">
-        <div className="flex justify-around">
-          {navItems.map((item) => {
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-dark-card/95 backdrop-blur-xl border-t border-dark-border/50 shadow-elevation-3 z-40 safe-area-inset-bottom">
+        <div className="flex justify-around px-2 py-2">
+          {navItems.slice(0, 5).map((item) => {
             const Icon = item.icon
+            const active = isActive(item.path)
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center px-2 py-1.5 rounded-lg transition-all duration-300 min-w-0 flex-1 ${
-                  isActive(item.path)
-                    ? 'text-primary transform scale-105 glow-text'
-                    : 'text-white/80 hover:text-primary'
+                className={`flex flex-col items-center justify-center px-3 py-2 rounded-xl transition-all duration-200 min-w-0 flex-1 group ${
+                  active
+                    ? 'text-primary scale-110'
+                    : 'text-white/60 hover:text-white/90'
                 }`}
               >
-                <Icon className="h-4 w-4 sm:h-5 sm:w-5 mb-0.5" />
-                <span className="text-[10px] sm:text-xs font-medium truncate w-full text-center">{item.label}</span>
+                <div
+                  className={`relative p-2 rounded-lg transition-all duration-200 ${
+                    active
+                      ? 'bg-primary/20 shadow-glow-primary'
+                      : 'group-hover:bg-primary/10'
+                  }`}
+                >
+                  <Icon
+                    className={`h-5 w-5 transition-transform duration-200 ${
+                      active ? 'scale-110' : 'group-hover:scale-110'
+                    }`}
+                  />
+                  {active && (
+                    <div className="absolute inset-0 bg-primary/20 rounded-lg blur-md" />
+                  )}
+                </div>
+                <span
+                  className={`text-[10px] font-medium mt-1 transition-all duration-200 ${
+                    active ? 'text-primary' : 'text-white/60'
+                  }`}
+                >
+                  {item.label}
+                </span>
               </Link>
             )
           })}
@@ -177,4 +284,3 @@ export default function Layout({ children }) {
     </div>
   )
 }
-

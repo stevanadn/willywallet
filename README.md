@@ -1,4 +1,4 @@
-# Willy Wallet
+# Student Vault
 
 An educational financial management application designed to help high school students manage their finances, improve financial literacy, and track income/expenses effectively.
 

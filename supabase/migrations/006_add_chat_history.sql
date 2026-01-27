@@ -1,5 +1,5 @@
 -- Migration: Add chat_history table for AI Advisor
--- This table stores chat messages between users and AI advisor (Willy)
+-- This table stores chat messages between users and AI advisor (Vault)
 
 -- ============================================
 -- CHAT_HISTORY TABLE
