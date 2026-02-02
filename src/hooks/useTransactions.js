@@ -25,10 +25,12 @@ export function useMonthlyTransactions(userId, month, year) {
     queryKey: ['monthly-transactions', userId, month, year],
     queryFn: async () => {
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-      const endDate = `${year}-${String(month).padStart(2, '0')}-31`
-      const { data, error } = await supabase.from('transactions').select('*').eq('user_id', userId).gte('date', startDate).lte('date', endDate)
+      // Get the last day of the month
+      const lastDay = new Date(year, month, 0).getDate()
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+      const { data, error } = await supabase.from('transactions').select(selectFields).eq('user_id', userId).gte('date', startDate).lte('date', endDate).order('date', { ascending: true })
       if (error) throw error
-      return data
+      return data || []
     },
     enabled: !!userId && !!month && !!year,
   })
@@ -46,7 +48,7 @@ export function useCreateTransaction() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries(['transactions', variables.user_id])
       queryClient.invalidateQueries(['wallets', variables.user_id])
-      queryClient.invalidateQueries(['monthly-transactions'])
+      queryClient.invalidateQueries({ queryKey: ['monthly-transactions'] })
     },
   })
 }
@@ -62,7 +64,7 @@ export function useUpdateTransaction() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries(['transactions', variables.user_id])
       queryClient.invalidateQueries(['wallets', variables.user_id])
-      queryClient.invalidateQueries(['monthly-transactions'])
+      queryClient.invalidateQueries({ queryKey: ['monthly-transactions'] })
     },
   })
 }
@@ -77,7 +79,7 @@ export function useDeleteTransaction() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries(['transactions', variables.user_id])
       queryClient.invalidateQueries(['wallets', variables.user_id])
-      queryClient.invalidateQueries(['monthly-transactions'])
+      queryClient.invalidateQueries({ queryKey: ['monthly-transactions'] })
     },
   })
 }

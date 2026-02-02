@@ -8,7 +8,7 @@ import Card from '../components/Card'
 import Button from '../components/Button'
 import Input from '../components/Input'
 import Modal from '../components/Modal'
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, ComposedChart, Line } from 'recharts'
 import { Wallet, TrendingUp, TrendingDown, Plus, Trash2 } from 'lucide-react'
 
 export default function Dashboard() {
@@ -19,7 +19,7 @@ export default function Dashboard() {
   const currentYear = new Date().getFullYear()
 
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(user?.id)
-  const { data: transactions = [], isLoading: transactionsLoading } = useMonthlyTransactions(
+  const { data: transactions = [], isLoading: transactionsLoading, error: transactionsError } = useMonthlyTransactions(
     user?.id,
     currentMonth,
     currentYear
@@ -31,11 +31,11 @@ export default function Dashboard() {
   // Calculate totals
   const totalBalance = wallets.reduce((sum, w) => sum + parseFloat(w.balance || 0), 0)
   const monthlyIncome = transactions
-    .filter((t) => t.type === 'income')
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+    .filter((t) => t && t.type === 'income')
+    .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
   const monthlyExpense = transactions
-    .filter((t) => t.type === 'expense')
-    .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+    .filter((t) => t && t.type === 'expense')
+    .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
 
   // Calculate expense breakdown by category
   const expenseBreakdown = categories.map((category) => {
@@ -52,6 +52,50 @@ export default function Dashboard() {
       icon: category.icon,
     }
   }).filter((item) => item.value > 0)
+
+  // Helper function to normalize date strings (handles both YYYY-MM-DD and YYYY-MM-DDTHH:mm:ss formats)
+  const normalizeDate = (dateStr) => {
+    if (!dateStr) return ''
+    // If it's already in YYYY-MM-DD format, return as is
+    if (typeof dateStr === 'string' && dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      return dateStr
+    }
+    // If it includes time, extract just the date part
+    if (typeof dateStr === 'string' && dateStr.includes('T')) {
+      return dateStr.split('T')[0]
+    }
+    // If it's a Date object, convert to YYYY-MM-DD
+    if (dateStr instanceof Date) {
+      return dateStr.toISOString().split('T')[0]
+    }
+    return String(dateStr).substring(0, 10)
+  }
+
+  // Calculate daily expenses for the month
+  const getDaysInMonth = (month, year) => {
+    return new Date(year, month, 0).getDate()
+  }
+
+  const daysInMonth = getDaysInMonth(currentMonth, currentYear)
+  const dailyExpenses = Array.from({ length: daysInMonth }, (_, i) => {
+    const day = i + 1
+    const dayStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    const dayTransactions = transactions.filter(
+      (t) => t.type === 'expense' && normalizeDate(t.date) === dayStr
+    )
+    const total = dayTransactions.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
+    return {
+      day: day,
+      date: dayStr,
+      expense: total,
+      income: transactions
+        .filter((t) => t.type === 'income' && normalizeDate(t.date) === dayStr)
+        .reduce((sum, t) => sum + parseFloat(t.amount || 0), 0),
+    }
+  })
+
+  // Calculate net savings
+  const netSavings = monthlyIncome - monthlyExpense
 
   const COLORS = ['#ffffff', '#cbd5e1', '#94a3b8', '#64748b', '#1e3a5f', '#2d4a6f', '#3d5a7f']
 
@@ -98,6 +142,11 @@ export default function Dashboard() {
     )
   }
 
+  // Debug: Log transactions to help diagnose issues
+  if (transactionsError) {
+    console.error('Error loading transactions:', transactionsError)
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6 animate-fade-in">
       <div className="animate-fade-in-down">
@@ -142,6 +191,11 @@ export default function Dashboard() {
               <p className="text-xl sm:text-2xl font-bold text-white mt-1 truncate">
                 {formatCurrency(monthlyExpense)}
               </p>
+              {monthlyIncome > 0 && (
+                <p className="text-xs text-white/50 mt-1">
+                  {((monthlyExpense / monthlyIncome) * 100).toFixed(1)}% of income
+                </p>
+              )}
             </div>
             <div className="p-2 sm:p-3 bg-gradient-to-br from-primary/30 to-primary/10 rounded-full transform transition-transform duration-300 hover:scale-110 flex-shrink-0 ml-2">
               <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 text-primary-light" />
@@ -149,6 +203,93 @@ export default function Dashboard() {
           </div>
         </Card>
       </div>
+
+      {/* Income vs Expense Comparison Chart */}
+      {(monthlyIncome > 0 || monthlyExpense > 0) && (
+        <Card glow className="animate-fade-in-up" style={{ animationDelay: '0.35s' }}>
+          <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4">
+            Income vs Expenses
+          </h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={[{ name: 'Income', income: monthlyIncome, expense: monthlyExpense, net: netSavings }]}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis dataKey="name" stroke="#9ca3af" />
+              <YAxis stroke="#9ca3af" tickFormatter={(value) => formatCurrency(value)} />
+              <Tooltip
+                formatter={(value) => formatCurrency(value)}
+                contentStyle={{ 
+                  borderRadius: '8px', 
+                  border: 'none', 
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                  backgroundColor: '#1a1625',
+                  color: '#ffffff'
+                }}
+                itemStyle={{ color: '#ffffff' }}
+                labelStyle={{ color: '#ffffff' }}
+              />
+              <Legend 
+                wrapperStyle={{ color: '#ffffff' }}
+                formatter={(value) => <span style={{ color: '#ffffff' }}>{value}</span>}
+              />
+              <Bar dataKey="income" fill="#10b981" name="Income" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="expense" fill="#ef4444" name="Expense" radius={[8, 8, 0, 0]} />
+              <Line type="monotone" dataKey="net" stroke="#8b5cf6" strokeWidth={2} name="Net Savings" dot={{ fill: '#8b5cf6', r: 4 }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+          <div className="mt-4 pt-4 border-t border-dark-border">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-white/70">Net Savings:</span>
+              <span className={`font-semibold ${netSavings >= 0 ? 'text-primary-light' : 'text-red-400'}`}>
+                {formatCurrency(netSavings)}
+              </span>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Daily Expense Chart */}
+      {dailyExpenses.some((d) => d.expense > 0) && (
+        <Card glow className="animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
+          <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4">
+            Daily Expenses - {new Date(currentYear, currentMonth - 1, 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
+          </h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={dailyExpenses}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis 
+                dataKey="day" 
+                stroke="#9ca3af"
+                tick={{ fill: '#9ca3af' }}
+                interval={Math.floor(daysInMonth / 10)}
+              />
+              <YAxis 
+                stroke="#9ca3af" 
+                tick={{ fill: '#9ca3af' }}
+                tickFormatter={(value) => formatCurrency(value)}
+              />
+              <Tooltip
+                formatter={(value) => formatCurrency(value)}
+                labelFormatter={(label) => `Day ${label}`}
+                contentStyle={{ 
+                  borderRadius: '8px', 
+                  border: 'none', 
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                  backgroundColor: '#1a1625',
+                  color: '#ffffff'
+                }}
+                itemStyle={{ color: '#ffffff' }}
+                labelStyle={{ color: '#ffffff' }}
+              />
+              <Bar 
+                dataKey="expense" 
+                fill="#ef4444" 
+                name="Expense"
+                radius={[8, 8, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
 
       {/* Expense Breakdown Chart */}
       {expenseBreakdown.length > 0 && (
