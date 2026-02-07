@@ -17,16 +17,25 @@ export function useBudgets(userId, month, year) {
 }
 
 export function useBudgetSpending(userId, categoryId, month, year) {
+  // Ensure month and year are numbers for consistent query keys
+  const monthNum = typeof month === 'string' ? parseInt(month, 10) : month
+  const yearNum = typeof year === 'string' ? parseInt(year, 10) : year
+  
   return useQuery({
-    queryKey: ['budget-spending', userId, categoryId, month, year],
+    queryKey: ['budget-spending', userId, categoryId, monthNum, yearNum],
     queryFn: async () => {
-      const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-      const endDate = `${year}-${String(month).padStart(2, '0')}-31`
+      const startDate = `${yearNum}-${String(monthNum).padStart(2, '0')}-01`
+      // Get the last day of the month correctly
+      const lastDay = new Date(yearNum, monthNum, 0).getDate()
+      const endDate = `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
       const { data, error } = await supabase.from('transactions').select('amount').eq('user_id', userId).eq('category_id', categoryId).eq('type', 'expense').gte('date', startDate).lte('date', endDate)
       if (error) throw error
-      return data.reduce((sum, t) => sum + parseFloat(t.amount), 0)
+      const total = data.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
+      console.log('Budget spending query result:', { userId, categoryId, month: monthNum, year: yearNum, total, transactionCount: data.length })
+      return total
     },
-    enabled: !!userId && !!categoryId && !!month && !!year,
+    enabled: !!userId && !!categoryId && !!monthNum && !!yearNum,
+    staleTime: 0, // Always consider data stale to allow refetching
   })
 }
 

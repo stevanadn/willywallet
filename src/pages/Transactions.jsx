@@ -115,6 +115,57 @@ export default function Transactions() {
       return
     }
 
+    // Check wallet balance for expense transactions
+    if (formData.type === 'expense') {
+      const wallet = wallets.find((w) => w.id === formData.wallet_id.trim())
+      if (!wallet) {
+        alert('Wallet not found')
+        return
+      }
+
+      const currentBalance = parseFloat(wallet.balance || 0)
+      
+      if (editingTransaction) {
+        // For updates, calculate what the balance will be after the update
+        const oldAmount = parseFloat(editingTransaction.amount || 0)
+        const oldType = editingTransaction.type
+        const oldWalletId = editingTransaction.wallet_id
+        const isWalletChanged = formData.wallet_id.trim() !== oldWalletId
+        
+        if (isWalletChanged) {
+          // Wallet changed - check if new wallet has enough balance
+          if (currentBalance < amount) {
+            alert(`Insufficient balance in selected wallet. Available: ${formatCurrency(currentBalance)}`)
+            return
+          }
+        } else {
+          // Same wallet - calculate net effect
+          // The database trigger will: reverse old transaction, then apply new transaction
+          // For expense: reverse means adding back, new means subtracting
+          let newBalance = currentBalance
+          
+          if (oldType === 'expense') {
+            // Reverse old expense (add back), then apply new expense (subtract)
+            newBalance = currentBalance + oldAmount - amount
+          } else {
+            // Reverse old income (subtract), then apply new expense (subtract)
+            newBalance = currentBalance - oldAmount - amount
+          }
+          
+          if (newBalance < 0) {
+            alert(`Insufficient balance. This would result in a balance of ${formatCurrency(newBalance)}`)
+            return
+          }
+        }
+      } else {
+        // For new transactions, check if balance is sufficient
+        if (currentBalance < amount) {
+          alert(`Insufficient balance in selected wallet. Available: ${formatCurrency(currentBalance)}`)
+          return
+        }
+      }
+    }
+
     try {
       const transactionData = {
         user_id: user.id,
@@ -131,6 +182,7 @@ export default function Transactions() {
           id: editingTransaction.id,
           updates: transactionData,
           user_id: user.id,
+          oldTransaction: editingTransaction,
         })
       } else {
         await createMutation.mutateAsync(transactionData)
@@ -142,11 +194,11 @@ export default function Transactions() {
     }
   }
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (transaction) => {
     if (!confirm('Are you sure you want to delete this transaction?')) return
 
     try {
-      await deleteMutation.mutateAsync({ id, user_id: user.id })
+      await deleteMutation.mutateAsync({ id: transaction.id, user_id: user.id, transaction })
     } catch (error) {
       alert('Error deleting transaction: ' + error.message)
     }
@@ -275,7 +327,7 @@ export default function Transactions() {
                             <Edit size={16} className="sm:w-[18px] sm:h-[18px]" />
                           </button>
                           <button
-                            onClick={() => handleDelete(transaction.id)}
+                            onClick={() => handleDelete(transaction)}
                             className="p-1.5 sm:p-2 text-gray-400 hover:text-red-600 transition-colors"
                             aria-label="Delete transaction"
                           >
