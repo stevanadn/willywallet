@@ -6,7 +6,11 @@ export function useWallets(userId) {
   return useQuery({
     queryKey: ['wallets', userId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('wallets').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+      const { data, error } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
       if (error) throw error
       return data
     },
@@ -23,7 +27,9 @@ export function useCreateWallet() {
       if (error) throw error
       return data
     },
-    onSuccess: (_, variables) => queryClient.invalidateQueries(['wallets', variables.user_id]),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['wallets', variables.user_id])
+    },
   })
 }
 
@@ -35,7 +41,9 @@ export function useUpdateWallet() {
       if (error) throw error
       return data
     },
-    onSuccess: (_, variables) => queryClient.invalidateQueries(['wallets', variables.user_id]),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['wallets', variables.user_id])
+    },
   })
 }
 
@@ -46,7 +54,9 @@ export function useDeleteWallet() {
       const { error } = await supabase.from('wallets').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: (_, variables) => queryClient.invalidateQueries(['wallets', variables.user_id]),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['wallets', variables.user_id])
+    },
   })
 }
 

@@ -8,7 +8,12 @@ export function useBudgets(userId, month, year) {
   return useQuery({
     queryKey: ['budgets', userId, month, year],
     queryFn: async () => {
-      const { data, error } = await supabase.from('budgets').select(selectFields).eq('user_id', userId).eq('period_month', month).eq('period_year', year)
+      const { data, error } = await supabase
+        .from('budgets')
+        .select(selectFields)
+        .eq('user_id', userId)
+        .eq('period_month', month)
+        .eq('period_year', year)
       if (error) throw error
       return data
     },
@@ -25,17 +30,23 @@ export function useBudgetSpending(userId, categoryId, month, year) {
     queryKey: ['budget-spending', userId, categoryId, monthNum, yearNum],
     queryFn: async () => {
       const startDate = `${yearNum}-${String(monthNum).padStart(2, '0')}-01`
-      // Get the last day of the month correctly
       const lastDay = new Date(yearNum, monthNum, 0).getDate()
       const endDate = `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-      const { data, error } = await supabase.from('transactions').select('amount').eq('user_id', userId).eq('category_id', categoryId).eq('type', 'expense').gte('date', startDate).lte('date', endDate)
+      
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('amount')
+        .eq('user_id', userId)
+        .eq('category_id', categoryId)
+        .eq('type', 'expense')
+        .gte('date', startDate)
+        .lte('date', endDate)
+      
       if (error) throw error
-      const total = data.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
-      console.log('Budget spending query result:', { userId, categoryId, month: monthNum, year: yearNum, total, transactionCount: data.length })
-      return total
+      return data.reduce((sum, t) => sum + parseFloat(t.amount || 0), 0)
     },
     enabled: !!userId && !!categoryId && !!monthNum && !!yearNum,
-    staleTime: 0, // Always consider data stale to allow refetching
+    staleTime: 0,
   })
 }
 
@@ -48,7 +59,9 @@ export function useCreateBudget() {
       if (error) throw error
       return data
     },
-    onSuccess: (_, variables) => queryClient.invalidateQueries(['budgets', variables.user_id]),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['budgets', variables.user_id])
+    },
   })
 }
 
@@ -60,7 +73,9 @@ export function useUpdateBudget() {
       if (error) throw error
       return data
     },
-    onSuccess: (_, variables) => queryClient.invalidateQueries(['budgets', variables.user_id]),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['budgets', variables.user_id])
+    },
   })
 }
 
@@ -71,7 +86,9 @@ export function useDeleteBudget() {
       const { error } = await supabase.from('budgets').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: (_, variables) => queryClient.invalidateQueries(['budgets', variables.user_id]),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['budgets', variables.user_id])
+    },
   })
 }
 

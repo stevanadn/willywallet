@@ -6,8 +6,14 @@ export function useCategories(userId, type = null) {
   return useQuery({
     queryKey: ['categories', userId, type],
     queryFn: async () => {
-      let query = supabase.from('categories').select('*').or(`user_id.eq.${userId},user_id.is.null`).order('name', { ascending: true })
+      let query = supabase
+        .from('categories')
+        .select('*')
+        .or(`user_id.eq.${userId},user_id.is.null`)
+        .order('name', { ascending: true })
+
       if (type) query = query.eq('type', type)
+
       const { data, error } = await query
       if (error) throw error
       return data
@@ -25,7 +31,9 @@ export function useCreateCategory() {
       if (error) throw error
       return data
     },
-    onSuccess: (_, variables) => queryClient.invalidateQueries(['categories', variables.user_id]),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['categories', variables.user_id])
+    },
   })
 }
 

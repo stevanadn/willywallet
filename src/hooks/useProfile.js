@@ -21,7 +21,9 @@ export function useUpdateProfile() {
       if (error) throw error
       return data
     },
-    onSuccess: (data) => queryClient.invalidateQueries(['profile', data.id]),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries(['profile', data.id])
+    },
   })
 }
 

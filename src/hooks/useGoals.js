@@ -6,7 +6,11 @@ export function useGoals(userId) {
   return useQuery({
     queryKey: ['goals', userId],
     queryFn: async () => {
-      const { data, error } = await supabase.from('goals').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
       if (error) throw error
       return data
     },
@@ -23,7 +27,9 @@ export function useCreateGoal() {
       if (error) throw error
       return data
     },
-    onSuccess: (_, variables) => queryClient.invalidateQueries(['goals', variables.user_id]),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['goals', variables.user_id])
+    },
   })
 }
 
@@ -35,7 +41,9 @@ export function useUpdateGoal() {
       if (error) throw error
       return data
     },
-    onSuccess: (_, variables) => queryClient.invalidateQueries(['goals', variables.user_id]),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['goals', variables.user_id])
+    },
   })
 }
 
@@ -46,7 +54,9 @@ export function useDeleteGoal() {
       const { error } = await supabase.from('goals').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: (_, variables) => queryClient.invalidateQueries(['goals', variables.user_id]),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries(['goals', variables.user_id])
+    },
   })
 }
 
